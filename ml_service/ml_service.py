@@ -2,11 +2,8 @@ import grpc
 
 from ml_service_pb2 import (
     TaskType,
-    GetModelsRequest,
     GetModelsResponse,
-    GetHyperParamsRequest,
     GetHyperParamsResponse,
-    PredictOrCreateModelRequest,
     PredictOrCreateModelResponse,
     RemoveModelResponse
 )
@@ -36,27 +33,41 @@ class MlService(
 ):
     def GetModels(self, request, context):
         if request.task_type not in model_by_task_type:
-            context.abort(grpc.StatusCode.NOT_FOUND, "No such types models exist")
+            context.abort(
+                grpc.StatusCode.NOT_FOUND,
+                "No such types models exist"
+            )
 
-        return GetModelsResponse(model_names=model_by_task_type[request.task_type])
+        return GetModelsResponse(
+            model_names=model_by_task_type[request.task_type]
+        )
 
     def GetHyperParams(self, request, context):
         model_class = get_model_class(request.model_name)
 
         if model_class is None:
-            return context.abort(grpc.StatusCode.NOT_FOUND, "No such model exists")
+            return context.abort(
+                grpc.StatusCode.NOT_FOUND,
+                "No such model exists"
+            )
 
-        return GetHyperParamsResponse(hyper_params=list(model_class().get_params().keys()))
+        return GetHyperParamsResponse(
+            hyper_params=list(model_class().get_params().keys())
+        )
 
     def PredictOrCreateModel(self, request, context):
 
         if request.csv_path == '':
-            return context.abort(grpc.StatusCode.UNAVAILABLE, "No data provided")
+            return context.abort(
+                grpc.StatusCode.UNAVAILABLE,
+                "No data provided"
+            )
 
         data = pd.read_csv(request.csv_path)
 
         # Predict case
-        if not request.retrain and f"{request.model_name}.joblib" in os.listdir('./saved_models'):
+        if not request.retrain and \
+                f"{request.model_name}.joblib" in os.listdir('./saved_models'):
 
             if request.target != '':
                 data.drop(request.target, axis=1, inplace=True)
@@ -64,7 +75,10 @@ class MlService(
             model = joblib.load(f"./saved_models/{request.model_name}.joblib")
             pred = model.predict(data).flatten().astype('float64').tolist()
 
-            return PredictOrCreateModelResponse(status="Predicted", predict=pred)
+            return PredictOrCreateModelResponse(
+                status="Predicted",
+                predict=pred
+            )
 
         # If model exists, retrain case
         if f"{request.model_name}.joblib" in os.listdir('./saved_models'):
@@ -72,7 +86,10 @@ class MlService(
 
         # Train model otherwise
         if request.target == '':
-            return context.abort(grpc.StatusCode.UNAVAILABLE, "No target column name provided")
+            return context.abort(
+                grpc.StatusCode.UNAVAILABLE,
+                "No target column name provided"
+            )
 
         y = data[request.target]
         X = data.drop(request.target, axis=1)
@@ -87,7 +104,9 @@ class MlService(
 
         joblib.dump(model, f"./saved_models/{request.model_name}.joblib")
 
-        return PredictOrCreateModelResponse(status="Model has been trained and saved")
+        return PredictOrCreateModelResponse(
+            status="Model has been trained and saved"
+        )
 
     def RemoveModel(self, request, context):
         if f"{request.model_name}.joblib" in os.listdir('./saved_models'):
@@ -95,7 +114,9 @@ class MlService(
 
             return RemoveModelResponse(status="Model removed successfully")
 
-        return RemoveModelResponse(status="Model does not exist, nothing to do")
+        return RemoveModelResponse(
+            status="Model does not exist, nothing to do"
+        )
 
 
 def serve():
