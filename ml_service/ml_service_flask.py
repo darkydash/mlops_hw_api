@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.getcwd())
+
 from flask import Flask
 from flask_restx import Resource, Api, reqparse
 from werkzeug.exceptions import NotFound, BadRequest
@@ -122,4 +126,4 @@ class RemoveModel(Resource):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
