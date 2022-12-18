@@ -22,6 +22,8 @@ import os
 
 import pandas as pd
 
+from .database_utils import log_to_db
+
 model_by_task_type = {
     TaskType.CLASSIFICATION: ['LogisticRegression', 'KNeighborsClassifier'],
     TaskType.REGRESSION: ['DecisionTreeRegressor', 'LinearRegression']
@@ -33,9 +35,11 @@ class MlService(
 ):
     def GetModels(self, request, context):
         if request.task_type not in model_by_task_type:
+            msg = "No such types models exist"
+            log_to_db(404, msg)
             context.abort(
                 grpc.StatusCode.NOT_FOUND,
-                "No such types models exist"
+                msg
             )
 
         return GetModelsResponse(
@@ -46,9 +50,11 @@ class MlService(
         model_class = get_model_class(request.model_name)
 
         if model_class is None:
+            msg = "No such types models exist"
+            log_to_db(404, msg)
             return context.abort(
                 grpc.StatusCode.NOT_FOUND,
-                "No such model exists"
+                msg
             )
 
         return GetHyperParamsResponse(
@@ -58,9 +64,11 @@ class MlService(
     def PredictOrCreateModel(self, request, context):
 
         if request.csv_path == '':
+            msg = "No data provided"
+            log_to_db(400, msg)
             return context.abort(
                 grpc.StatusCode.UNAVAILABLE,
-                "No data provided"
+                msg
             )
 
         data = pd.read_csv(request.csv_path)
@@ -86,9 +94,11 @@ class MlService(
 
         # Train model otherwise
         if request.target == '':
+            msg = "No target column name provided"
+            log_to_db(400, msg)
             return context.abort(
                 grpc.StatusCode.UNAVAILABLE,
-                "No target column name provided"
+                msg
             )
 
         y = data[request.target]

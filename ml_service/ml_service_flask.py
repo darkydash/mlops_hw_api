@@ -10,6 +10,7 @@ import pandas as pd
 import os
 import joblib
 import json
+from .database_utils import log_to_db
 
 app = Flask(__name__)
 api = Api(app)
@@ -24,7 +25,9 @@ model_by_task_type = {
 class GetModelsRest(Resource):
     def get(self, task_type):
         if task_type not in model_by_task_type.keys():
-            raise NotFound('No such types models exist')
+            msg = 'No such types models exist'
+            log_to_db(404, msg)
+            raise NotFound(msg)
 
         return {
             'model_names': model_by_task_type[task_type]
@@ -36,7 +39,9 @@ class GetHyperParamsRest(Resource):
     def get(self, model_name):
         model_class = get_model_class(model_name)
         if model_class is None:
-            raise NotFound('No such model exists')
+            msg = 'No such model exists'
+            log_to_db(404, msg)
+            raise NotFound(msg)
 
         return {
             'hyper_params': list(model_class().get_params().keys())
@@ -65,10 +70,14 @@ class PredictOrCreateModelRest(Resource):
         model_class = get_model_class(model_name)
 
         if model_class is None:
-            raise NotFound('No such model exists')
+            msg = 'No such model exists'
+            log_to_db(404, msg)
+            raise NotFound(msg)
 
         if csv_path == '':
-            raise BadRequest('No data provided')
+            msg = 'No data provided'
+            log_to_db(400, msg)
+            raise BadRequest(msg)
 
         data = pd.read_csv(csv_path)
 
