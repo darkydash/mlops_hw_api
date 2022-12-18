@@ -15,6 +15,7 @@ services:
     image: postgres:13.9-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+      - ./sql/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     expose:
       - 5432
     environment:
